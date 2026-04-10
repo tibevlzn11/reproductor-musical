@@ -43,8 +43,8 @@ switch ($method) {
         $data = json_decode(file_get_contents("php://input"));
 
         $cancion->nombreCancion = $data->nombreCancion;
-        $cancion->duracion      = $data->duracion;
         $cancion->artista       = $data->artista;
+        $cancion->imagen = $data->imagen;
         $cancion->genero        = $data->genero;
         $cancion->direccionUrl  = $data->direccionUrl;
         $cancion->idUsuario     = $data->idUsuario;
@@ -63,7 +63,6 @@ switch ($method) {
 
         $cancion->id            = $data->id;
         $cancion->nombreCancion = $data->nombreCancion;
-        $cancion->duracion      = $data->duracion;
         $cancion->artista       = $data->artista;
         $cancion->genero        = $data->genero;
         $cancion->direccionUrl  = $data->direccionUrl;

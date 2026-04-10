@@ -1,0 +1,793 @@
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link
+  href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+  rel="stylesheet"
+/>
+
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    background: #000;
+  }
+  .app {
+    min-height: 600px;
+    background: #000;
+    font-family: var(--font-sans, sans-serif);
+  }
+  .input-field {
+    width: 100%;
+    background: #111;
+    border: 1px solid #222;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .input-field:focus {
+    border-color: #22c55e;
+  }
+  .input-field::placeholder {
+    color: #555;
+  }
+  .btn-green {
+    width: 100%;
+    background: #16a34a;
+    color: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      transform 0.1s;
+  }
+  .btn-green:hover {
+    background: #15803d;
+  }
+  .btn-green:active {
+    transform: scale(0.98);
+  }
+  .btn-green:disabled {
+    background: #166534;
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .library {
+    display: none;
+    min-height: 600px;
+    background: #000;
+    color: #fff;
+  }
+  .library.active {
+    display: block;
+  }
+  .login-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 600px;
+    padding: 2rem;
+  }
+  .login-screen.hidden {
+    display: none;
+  }
+
+  .song-card {
+    background: #111;
+    border: 1px solid #1a1a1a;
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition:
+      background 0.15s,
+      border 0.15s;
+    cursor: pointer;
+  }
+  .song-card:hover {
+    background: #1a1a1a;
+    border-color: #22c55e33;
+  }
+  .song-icon {
+    width: 44px;
+    height: 44px;
+    background: #16a34a22;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .nav-btn {
+    background: transparent;
+    border: 1px solid #222;
+    color: #aaa;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover {
+    border-color: #22c55e;
+    color: #22c55e;
+  }
+  .nav-btn.active {
+    background: #16a34a22;
+    border-color: #22c55e;
+    color: #22c55e;
+  }
+  .logout-btn {
+    background: transparent;
+    border: 1px solid #333;
+    color: #888;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .logout-btn:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ffffff44;
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Biblioteca Musical</title>
+  </head>
+  <body>
+    <div class="app" id="app">
+      <!-- LOGIN -->
+      <div class="login-screen" id="loginScreen">
+        <div style="width: 100%; max-width: 380px">
+          <div style="text-align: center; margin-bottom: 2rem">
+            <div
+              style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 56px;
+                height: 56px;
+                background: #16a34a22;
+                border-radius: 14px;
+                margin-bottom: 1rem;
+              "
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M9 18V5l12-2v13"
+                  stroke="#22c55e"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <circle
+                  cx="6"
+                  cy="18"
+                  r="3"
+                  stroke="#22c55e"
+                  stroke-width="1.8"
+                />
+                <circle
+                  cx="18"
+                  cy="16"
+                  r="3"
+                  stroke="#22c55e"
+                  stroke-width="1.8"
+                />
+              </svg>
+            </div>
+            <h1
+              style="
+                color: #fff;
+                font-size: 22px;
+                font-weight: 500;
+                margin-bottom: 4px;
+              "
+            >
+              Bienvenido
+            </h1>
+            <p style="color: #555; font-size: 14px">
+              Inicia sesión en tu biblioteca musical
+            </p>
+          </div>
+
+          <div
+            style="
+              background: #0a0a0a;
+              border: 1px solid #1a1a1a;
+              border-radius: 14px;
+              padding: 1.75rem;
+            "
+          >
+            <div style="margin-bottom: 1rem">
+              <label
+                style="
+                  color: #888;
+                  font-size: 13px;
+                  display: block;
+                  margin-bottom: 6px;
+                "
+                >Usuario</label
+              >
+              <input
+                class="input-field"
+                type="text"
+                id="inputUsuario"
+                placeholder="tu_usuario"
+              />
+            </div>
+            <div style="margin-bottom: 1.5rem">
+              <label
+                style="
+                  color: #888;
+                  font-size: 13px;
+                  display: block;
+                  margin-bottom: 6px;
+                "
+                >Contraseña</label
+              >
+              <div style="position: relative">
+                <input
+                  class="input-field"
+                  type="password"
+                  id="inputClave"
+                  placeholder="••••••••"
+                  style="padding-right: 44px"
+                />
+                <button
+                  onclick="togglePass()"
+                  style="
+                    position: absolute;
+                    right: 12px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    color: #555;
+                    padding: 0;
+                  "
+                  id="eyeBtn"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <button class="btn-green" onclick="handleLogin()" id="loginBtn">
+              Iniciar sesión
+            </button>
+            <p
+              style="
+                text-align: center;
+                margin-top: 1rem;
+                color: #333;
+                font-size: 12px;
+              "
+            >
+              Demo: usuario <span style="color: #22c55e">admin</span> / clave
+              <span style="color: #22c55e">1234</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- BIBLIOTECA -->
+      <div class="library" id="libraryScreen">
+        <!-- Header -->
+        <div
+          style="
+            background: #0a0a0a;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                background: #16a34a22;
+                border-radius: 8px;
+              "
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M9 18V5l12-2v13"
+                  stroke="#22c55e"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <circle
+                  cx="6"
+                  cy="18"
+                  r="3"
+                  stroke="#22c55e"
+                  stroke-width="2"
+                />
+                <circle
+                  cx="18"
+                  cy="16"
+                  r="3"
+                  stroke="#22c55e"
+                  stroke-width="2"
+                />
+              </svg>
+            </div>
+            <span style="color: #fff; font-weight: 500; font-size: 15px"
+              >Mi Biblioteca</span
+            >
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="color: #555; font-size: 13px" id="welcomeUser"></span>
+            <button class="logout-btn" onclick="handleLogout()">Salir</button>
+          </div>
+        </div>
+
+        <!-- Nav tabs -->
+        <div
+          style="
+            padding: 16px 20px 0;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid #111;
+          "
+        >
+          <button class="nav-btn active" onclick="setTab('canciones', this)">
+            Canciones
+          </button>
+          <button class="nav-btn" onclick="setTab('listas', this)">
+            Listas
+          </button>
+          <button class="nav-btn" onclick="setTab('explorar', this)">
+            Explorar
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 20px">
+          <!-- Tab canciones -->
+          <div id="tab-canciones">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 16px;
+              "
+            >
+              <h2 style="color: #fff; font-size: 16px; font-weight: 500">
+                Todas las canciones
+              </h2>
+              <span style="color: #555; font-size: 13px" id="songCount"></span>
+            </div>
+            <div style="margin-bottom: 16px">
+              <input
+                class="input-field"
+                type="text"
+                placeholder="Buscar canciones, artistas..."
+                oninput="filterSongs(this.value)"
+                style="max-width: 320px"
+              />
+            </div>
+            <div
+              id="songList"
+              style="display: flex; flex-direction: column; gap: 8px"
+            ></div>
+            <div
+              id="loadingMsg"
+              style="
+                text-align: center;
+                padding: 2rem;
+                color: #555;
+                font-size: 14px;
+                display: none;
+              "
+            >
+              <span class="spinner"></span> Cargando...
+            </div>
+            <div
+              id="emptyMsg"
+              style="
+                text-align: center;
+                padding: 3rem;
+                color: #333;
+                font-size: 14px;
+                display: none;
+              "
+            >
+              No se encontraron canciones
+            </div>
+          </div>
+
+          <!-- Tab listas -->
+          <div id="tab-listas" style="display: none">
+            <h2
+              style="
+                color: #fff;
+                font-size: 16px;
+                font-weight: 500;
+                margin-bottom: 16px;
+              "
+            >
+              Listas de reproducción
+            </h2>
+            <div
+              id="listaList"
+              style="display: flex; flex-direction: column; gap: 8px"
+            ></div>
+          </div>
+
+          <!-- Tab explorar -->
+          <div id="tab-explorar" style="display: none">
+            <h2
+              style="
+                color: #fff;
+                font-size: 16px;
+                font-weight: 500;
+                margin-bottom: 20px;
+              "
+            >
+              Explorar por género
+            </h2>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 10px;
+              "
+              id="genreGrid"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
+<script>
+  const API = "http://localhost:8888/reproductorMusical/public";
+  let allSongs = [];
+  let currentUser = null;
+
+  function togglePass() {
+    const input = document.getElementById("inputClave");
+    input.type = input.type === "password" ? "text" : "password";
+  }
+
+  async function handleLogin() {
+    const usuario = document.getElementById("inputUsuario").value.trim();
+    const clave = document.getElementById("inputClave").value.trim();
+    const btn = document.getElementById("loginBtn");
+
+    if (!usuario || !clave) {
+      Swal.fire({
+        icon: "warning",
+        title: "Campos vacíos",
+        text: "Por favor ingresa tu usuario y contraseña.",
+        background: "#111",
+        color: "#fff",
+        confirmButtonColor: "#16a34a",
+        iconColor: "#eab308",
+      });
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Iniciando sesión...';
+
+    try {
+      const res = await fetch(`${API}/usuarios?login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuario, clave }),
+      });
+      console.log(res);
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        currentUser = data.usuario || usuario;
+        enterLibrary();
+      } else {
+        throw new Error(data.mensaje || "Credenciales incorrectas");
+      }
+    } catch (err) {
+      const isNetwork =
+        err.message.includes("fetch") || err.message.includes("Failed");
+
+      if (isNetwork) {
+        if (usuario === "admin" && clave === "1234") {
+          currentUser = "Admin";
+          enterLibrary();
+          return;
+        }
+        Swal.fire({
+          icon: "error",
+          title: "Credenciales incorrectas",
+          text: "Usuario o contraseña inválidos.",
+          background: "#111",
+          color: "#fff",
+          confirmButtonColor: "#16a34a",
+          iconColor: "#ef4444",
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error de autenticación",
+          text: err.message,
+          background: "#111",
+          color: "#fff",
+          confirmButtonColor: "#16a34a",
+          iconColor: "#ef4444",
+        });
+      }
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = "Iniciar sesión";
+    }
+  }
+
+  function enterLibrary() {
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("libraryScreen").classList.add("active");
+    document.getElementById("welcomeUser").textContent = currentUser;
+    loadSongs();
+    loadListas();
+  }
+
+  async function loadSongs() {
+    const list = document.getElementById("songList");
+    const loading = document.getElementById("loadingMsg");
+    loading.style.display = "block";
+    list.innerHTML = "";
+
+    try {
+      const res = await fetch(`${API}/canciones`);
+      allSongs = await res.json();
+      console.log("canciones ", res);
+      renderSongs(allSongs);
+    } catch {
+      allSongs = [
+        {
+          id: 1,
+          nombreCancion: "Tití Me Preguntó",
+          artista: "Bad Bunny",
+          genero: "Reggaeton",
+          duracion: "4:10",
+        },
+        {
+          id: 2,
+          nombreCancion: "BZRP Music Sessions #53",
+          artista: "Bizarrap",
+          genero: "Urban",
+          duracion: "3:22",
+        },
+        {
+          id: 3,
+          nombreCancion: "Flowers",
+          artista: "Miley Cyrus",
+          genero: "Pop",
+          duracion: "3:21",
+        },
+        {
+          id: 4,
+          nombreCancion: "Anti-Hero",
+          artista: "Taylor Swift",
+          genero: "Pop",
+          duracion: "3:20",
+        },
+        {
+          id: 5,
+          nombreCancion: "Shakira: Bzrp Music Sessions",
+          artista: "Bizarrap",
+          genero: "Urban",
+          duracion: "3:08",
+        },
+      ];
+      renderSongs(allSongs);
+    } finally {
+      loading.style.display = "none";
+    }
+  }
+
+  function renderSongs(songs) {
+    const list = document.getElementById("songList");
+    const empty = document.getElementById("emptyMsg");
+    document.getElementById("songCount").textContent =
+      `${songs.length} canciones`;
+
+    if (!songs.length) {
+      empty.style.display = "block";
+      list.innerHTML = "";
+      return;
+    }
+    empty.style.display = "none";
+    list.innerHTML = songs
+      .map(
+        (s, i) => `
+    <div class="song-card">
+      <div class="song-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M9 18V5l12-2v13" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="6" cy="18" r="3" stroke="#22c55e" stroke-width="2"/>
+          <circle cx="18" cy="16" r="3" stroke="#22c55e" stroke-width="2"/>
+        </svg>
+      </div>
+      <div style="flex:1; min-width:0;">
+        <p style="color:#fff; font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.nombreCancion}</p>
+        <p style="color:#666; font-size:12px; margin-top:2px;">${s.artista}</p>
+      </div>
+      <div style="text-align:right; flex-shrink:0;">
+        <span style="background:#16a34a18; color:#22c55e; font-size:11px; padding:3px 8px; border-radius:4px;">${s.genero || "—"}</span>
+        <p style="color:#444; font-size:12px; margin-top:4px;">${s.duracion || ""}</p>
+      </div>
+    </div>
+  `,
+      )
+      .join("");
+  }
+
+  function filterSongs(q) {
+    const filtered = allSongs.filter(
+      (s) =>
+        s.nombreCancion?.toLowerCase().includes(q.toLowerCase()) ||
+        s.artista?.toLowerCase().includes(q.toLowerCase()) ||
+        s.genero?.toLowerCase().includes(q.toLowerCase()),
+    );
+    renderSongs(filtered);
+  }
+
+  async function loadListas() {
+    try {
+      const res = await fetch(`${API}/listas?conteo`);
+      const listas = await res.json();
+      renderListas(listas);
+    } catch {
+      renderListas([
+        { id: 1, nombreLista: "Mis favoritas", totalCanciones: 12 },
+        { id: 2, nombreLista: "Para el gym", totalCanciones: 8 },
+        { id: 3, nombreLista: "Chill vibes", totalCanciones: 15 },
+      ]);
+    }
+  }
+
+  function renderListas(listas) {
+    const genres = [...new Set(allSongs.map((s) => s.genero).filter(Boolean))];
+    const grid = document.getElementById("genreGrid");
+    const colors = [
+      "#16a34a",
+      "#0891b2",
+      "#7c3aed",
+      "#dc2626",
+      "#d97706",
+      "#db2777",
+    ];
+    grid.innerHTML = genres
+      .map(
+        (g, i) => `
+    <div style="background:${colors[i % colors.length]}18; border:1px solid ${colors[i % colors.length]}33; border-radius:10px; padding:20px 16px; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='${colors[i % colors.length]}28'" onmouseout="this.style.background='${colors[i % colors.length]}18'">
+      <p style="color:${colors[i % colors.length]}; font-weight:500; font-size:14px;">${g}</p>
+      <p style="color:#555; font-size:12px; margin-top:4px;">${allSongs.filter((s) => s.genero === g).length} canciones</p>
+    </div>
+  `,
+      )
+      .join("");
+
+    document.getElementById("listaList").innerHTML = listas
+      .map(
+        (l) => `
+    <div class="song-card">
+      <div style="width:44px; height:44px; background:#16a34a22; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M3 6h18M3 12h18M3 18h12" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div style="flex:1;">
+        <p style="color:#fff; font-size:14px; font-weight:500;">${l.nombreLista}</p>
+        <p style="color:#666; font-size:12px; margin-top:2px;">${l.totalCanciones} canciones</p>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="#333" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+  `,
+      )
+      .join("");
+  }
+
+  function setTab(name, btn) {
+    ["canciones", "listas", "explorar"].forEach((t) => {
+      document.getElementById("tab-" + t).style.display =
+        t === name ? "block" : "none";
+    });
+    document
+      .querySelectorAll(".nav-btn")
+      .forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    if (
+      name === "explorar" &&
+      !document.getElementById("genreGrid").innerHTML
+    ) {
+      const genres = [
+        ...new Set(allSongs.map((s) => s.genero).filter(Boolean)),
+      ];
+      if (!genres.length) loadListas();
+    }
+  }
+
+  document.getElementById("inputClave").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleLogin();
+  });
+
+  function handleLogout() {
+    Swal.fire({
+      title: "¿Cerrar sesión?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Sí, salir",
+      cancelButtonText: "Cancelar",
+      background: "#111",
+      color: "#fff",
+      confirmButtonColor: "#16a34a",
+      cancelButtonColor: "#333",
+      iconColor: "#22c55e",
+    }).then((r) => {
+      if (r.isConfirmed) {
+        document.getElementById("libraryScreen").classList.remove("active");
+        document.getElementById("loginScreen").classList.remove("hidden");
+        document.getElementById("inputUsuario").value = "";
+        document.getElementById("inputClave").value = "";
+        currentUser = null;
+        allSongs = [];
+      }
+    });
+  }
+</script>

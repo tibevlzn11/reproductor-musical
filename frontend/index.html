@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Biblioteca Musical</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: #000; }
+      .app { min-height: 100vh; background: #000; font-family: sans-serif; padding-bottom: 100px; }
+      .input-field {
+        width: 100%; background: #111; border: 1px solid #222; color: #fff;
+        padding: 12px 16px; border-radius: 8px; font-size: 14px; outline: none;
+        transition: border 0.2s;
+      }
+      .input-field:focus { border-color: #22c55e; }
+      .input-field::placeholder { color: #555; }
+      .btn-green {
+        width: 100%; background: #16a34a; color: #fff; padding: 12px;
+        border-radius: 8px; font-size: 15px; font-weight: 500; border: none;
+        cursor: pointer; transition: background 0.2s, transform 0.1s;
+      }
+      .btn-green:hover { background: #15803d; }
+      .btn-green:active { transform: scale(0.98); }
+      .btn-green:disabled { background: #166534; opacity: 0.6; cursor: not-allowed; }
+      .library { display: none; min-height: 100vh; background: #000; color: #fff; }
+      .library.active { display: block; }
+      .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+      .login-screen.hidden { display: none; }
+      .song-card {
+        background: #111; border: 1px solid #1a1a1a; border-radius: 10px;
+        padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+        transition: background 0.15s, border 0.15s;
+      }
+      .song-card:hover { background: #1a1a1a; border-color: #22c55e33; }
+      .song-card.playing { border-color: #22c55e66; background: #16a34a0d; }
+      .song-icon {
+        width: 44px; height: 44px; background: #16a34a22; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        cursor: pointer; overflow: hidden;
+      }
+      .nav-btn {
+        background: transparent; border: 1px solid #222; color: #aaa;
+        padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;
+        transition: all 0.15s;
+      }
+      .nav-btn:hover { border-color: #22c55e; color: #22c55e; }
+      .nav-btn.active { background: #16a34a22; border-color: #22c55e; color: #22c55e; }
+      .logout-btn {
+        background: transparent; border: 1px solid #333; color: #888;
+        padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;
+        transition: all 0.15s;
+      }
+      .logout-btn:hover { border-color: #ef4444; color: #ef4444; }
+      .spinner {
+        width: 18px; height: 18px; border: 2px solid #ffffff44; border-top-color: #fff;
+        border-radius: 50%; animation: spin 0.7s linear infinite;
+        display: inline-block; vertical-align: middle; margin-right: 6px;
+      }
+      .spinner-sm {
+        width: 14px; height: 14px; border: 2px solid #ffffff33; border-top-color: #fff;
+        border-radius: 50%; animation: spin 0.7s linear infinite;
+        display: inline-block; vertical-align: middle; margin-right: 5px;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* iTunes */
+      .itunes-row {
+        background: #0f0f0f; border: 1px solid #1a1a1a; border-radius: 10px;
+        padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+        margin-bottom: 8px; transition: border 0.15s;
+      }
+      .itunes-row:hover { border-color: #22c55e33; }
+      .cover { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: #1a1a1a; }
+      .btn-add {
+        background: #16a34a18; border: 1px solid #22c55e44; color: #22c55e;
+        padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
+        cursor: pointer; transition: all 0.15s; flex-shrink: 0; white-space: nowrap;
+      }
+      .btn-add:hover { background: #16a34a33; border-color: #22c55e88; }
+      .btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
+      .btn-saved { background: #052e16; border-color: #166534; color: #4ade80; cursor: default; }
+      .badge-genre { background: #16a34a18; color: #22c55e; font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+      .search-btn {
+        background: #16a34a; color: #fff; border: none; padding: 11px 20px;
+        border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;
+        transition: background 0.2s, transform 0.1s; white-space: nowrap;
+      }
+      .search-btn:hover { background: #15803d; }
+      .search-btn:active { transform: scale(0.97); }
+      .search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      /* Reproductor */
+      .player-bar {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: #0a0a0a; border-top: 1px solid #1a1a1a;
+        padding: 12px 20px; z-index: 100; display: none;
+      }
+      .player-bar.visible { display: block; }
+      .player-inner { display: flex; align-items: center; gap: 16px; max-width: 900px; margin: 0 auto; }
+      .player-cover { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #1a1a1a; flex-shrink: 0; }
+      .player-info { flex: 1; min-width: 0; }
+      .player-title { color: #fff; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .player-artist { color: #666; font-size: 11px; margin-top: 2px; }
+      .player-controls { display: flex; align-items: center; gap: 12px; }
+      .ctrl-btn {
+        background: none; border: none; cursor: pointer; color: #aaa;
+        padding: 6px; border-radius: 50%; transition: color 0.15s, background 0.15s;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .ctrl-btn:hover { color: #fff; background: #ffffff11; }
+      .ctrl-btn.play-btn {
+        width: 36px; height: 36px; background: #16a34a; color: #fff; border-radius: 50%;
+      }
+      .ctrl-btn.play-btn:hover { background: #15803d; }
+      .progress-wrap { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+      .progress-time { color: #555; font-size: 11px; white-space: nowrap; }
+      .progress-bar {
+        flex: 1; height: 4px; background: #222; border-radius: 2px; cursor: pointer;
+        position: relative; overflow: hidden;
+      }
+      .progress-fill { height: 100%; background: #22c55e; border-radius: 2px; width: 0%; transition: width 0.1s linear; }
+
+      /* Opciones canción */
+      .song-actions { display: flex; gap: 6px; flex-shrink: 0; }
+      .action-btn {
+        background: transparent; border: 1px solid #2a2a2a; color: #666;
+        padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;
+        transition: all 0.15s; white-space: nowrap;
+      }
+      .action-btn:hover { border-color: #444; color: #aaa; }
+      .action-btn.danger:hover { border-color: #ef444466; color: #ef4444; }
+      .action-btn.success:hover { border-color: #22c55e66; color: #22c55e; }
+
+      /* Modal crear lista */
+      .modal-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 200; display: none;
+      }
+      .modal-overlay.open { display: flex; }
+      .modal-box {
+        background: #0f0f0f; border: 1px solid #222; border-radius: 14px;
+        padding: 1.5rem; width: 100%; max-width: 360px;
+      }
+
+      /* Animación ecualizador */
+      .eq-bars { display: flex; align-items: flex-end; gap: 2px; height: 16px; }
+      .eq-bar {
+        width: 3px; background: #22c55e; border-radius: 1px;
+        animation: eq 0.8s ease-in-out infinite alternate;
+      }
+      .eq-bar:nth-child(1) { animation-delay: 0s; }
+      .eq-bar:nth-child(2) { animation-delay: 0.2s; }
+      .eq-bar:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes eq {
+        from { height: 4px; }
+        to { height: 14px; }
+      }
+
+      .lista-card {
+        background: #111; border: 1px solid #1a1a1a; border-radius: 10px;
+        padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+        transition: background 0.15s, border 0.15s; cursor: pointer; margin-bottom: 8px;
+      }
+      .lista-card:hover { background: #1a1a1a; border-color: #22c55e33; }
+    </style>
+  </head>
+  <body>
+    <div class="app" id="app">
+
+      <!-- LOGIN -->
+      <div class="login-screen" id="loginScreen">
+        <div style="width:100%; max-width:380px;">
+          <div style="text-align:center; margin-bottom:2rem;">
+            <div style="display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; background:#16a34a22; border-radius:14px; margin-bottom:1rem;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18V5l12-2v13" stroke="#22c55e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="6" cy="18" r="3" stroke="#22c55e" stroke-width="1.8"/>
+                <circle cx="18" cy="16" r="3" stroke="#22c55e" stroke-width="1.8"/>
+              </svg>
+            </div>
+            <h1 style="color:#fff; font-size:22px; font-weight:500; margin-bottom:4px;">Bienvenido</h1>
+            <p style="color:#555; font-size:14px;">Inicia sesión en tu biblioteca musical</p>
+          </div>
+          <div style="background:#0a0a0a; border:1px solid #1a1a1a; border-radius:14px; padding:1.75rem;">
+            <div style="margin-bottom:1rem;">
+              <label style="color:#888; font-size:13px; display:block; margin-bottom:6px;">Usuario</label>
+              <input class="input-field" type="text" id="inputUsuario" placeholder="tu_usuario" />
+            </div>
+            <div style="margin-bottom:1.5rem;">
+              <label style="color:#888; font-size:13px; display:block; margin-bottom:6px;">Contraseña</label>
+              <div style="position:relative;">
+                <input class="input-field" type="password" id="inputClave" placeholder="••••••••" style="padding-right:44px;" />
+                <button onclick="togglePass()" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#555; padding:0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <button class="btn-green" onclick="handleLogin()" id="loginBtn">Iniciar sesión</button>
+            <p style="text-align:center; margin-top:1rem; color:#333; font-size:12px;">
+              Demo: usuario <span style="color:#22c55e">admin</span> / clave <span style="color:#22c55e">1234</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- BIBLIOTECA -->
+      <div class="library" id="libraryScreen">
+        <div style="background:#0a0a0a; border-bottom:1px solid #1a1a1a; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="display:flex; align-items:center; justify-content:center; width:32px; height:32px; background:#16a34a22; border-radius:8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18V5l12-2v13" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="6" cy="18" r="3" stroke="#22c55e" stroke-width="2"/>
+                <circle cx="18" cy="16" r="3" stroke="#22c55e" stroke-width="2"/>
+              </svg>
+            </div>
+            <span style="color:#fff; font-weight:500; font-size:15px;">Mi Biblioteca</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="color:#555; font-size:13px;" id="welcomeUser"></span>
+            <button class="logout-btn" onclick="handleLogout()">Salir</button>
+          </div>
+        </div>
+
+        <div style="padding:16px 20px 0; display:flex; gap:8px; border-bottom:1px solid #111; flex-wrap:wrap;">
+          <button class="nav-btn active" onclick="setTab('canciones', this)">Canciones</button>
+          <button class="nav-btn" onclick="setTab('listas', this)">Listas</button>
+          <button class="nav-btn" onclick="setTab('explorar', this)">Explorar</button>
+          <button class="nav-btn" onclick="setTab('buscar', this)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:middle; margin-right:4px;">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+              <path d="M16.5 16.5l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Buscar en iTunes
+          </button>
+        </div>
+
+        <div style="padding:20px;">
+
+          <!-- Tab canciones -->
+          <div id="tab-canciones">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+              <h2 style="color:#fff; font-size:16px; font-weight:500;">Todas las canciones</h2>
+              <span style="color:#555; font-size:13px;" id="songCount"></span>
+            </div>
+            <div style="margin-bottom:16px;">
+              <input class="input-field" type="text" placeholder="Buscar canciones, artistas..." oninput="filterSongs(this.value)" style="max-width:320px;" />
+            </div>
+            <div id="songList" style="display:flex; flex-direction:column; gap:8px;"></div>
+            <div id="loadingMsg" style="text-align:center; padding:2rem; color:#555; font-size:14px; display:none;">
+              <span class="spinner"></span> Cargando...
+            </div>
+            <div id="emptyMsg" style="text-align:center; padding:3rem; color:#333; font-size:14px; display:none;">No se encontraron canciones</div>
+          </div>
+
+          <!-- Tab listas -->
+          <div id="tab-listas" style="display:none;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+              <h2 style="color:#fff; font-size:16px; font-weight:500;">Listas de reproducción</h2>
+              <button onclick="abrirModalCrearLista()" style="background:#16a34a18; border:1px solid #22c55e44; color:#22c55e; padding:7px 14px; border-radius:6px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Nueva lista
+              </button>
+            </div>
+            <div id="listaList"></div>
+            <!-- Vista interior de una lista -->
+            <div id="listaDetalle" style="display:none;">
+              <button onclick="volverAListas()" style="background:none; border:none; color:#888; font-size:13px; cursor:pointer; margin-bottom:16px; display:flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Volver a listas
+              </button>
+              <h3 id="detalleTitulo" style="color:#fff; font-size:16px; font-weight:500; margin-bottom:16px;"></h3>
+              <div id="detalleSongs" style="display:flex; flex-direction:column; gap:8px;"></div>
+              <div id="detalleEmpty" style="text-align:center; padding:2rem; color:#333; font-size:14px; display:none;">Esta lista está vacía</div>
+            </div>
+          </div>
+
+          <!-- Tab explorar -->
+          <div id="tab-explorar" style="display:none;">
+            <h2 style="color:#fff; font-size:16px; font-weight:500; margin-bottom:20px;">Explorar por género</h2>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px;" id="genreGrid"></div>
+          </div>
+
+          <!-- Tab buscar iTunes -->
+          <div id="tab-buscar" style="display:none;">
+            <h2 style="color:#fff; font-size:16px; font-weight:500; margin-bottom:16px;">
+              Buscar en iTunes
+              <span style="background:#16a34a22; color:#22c55e; font-size:11px; padding:3px 8px; border-radius:4px; margin-left:8px; font-weight:400;">Apple Music</span>
+            </h2>
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+              <input class="input-field" type="text" id="itunesSearch" placeholder="Artista, canción o álbum..." style="max-width:400px;" />
+              <button class="search-btn" onclick="buscarEnItunes()" id="itunesBtn">Buscar</button>
+            </div>
+            <div id="itunesResults"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- REPRODUCTOR -->
+    <div class="player-bar" id="playerBar">
+      <div class="player-inner">
+        <img class="player-cover" id="playerCover" src="" alt="" />
+        <div class="player-info">
+          <div class="player-title" id="playerTitle">—</div>
+          <div class="player-artist" id="playerArtist">—</div>
+        </div>
+        <div class="player-controls">
+          <button class="ctrl-btn" onclick="prevSong()" title="Anterior">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M19 20L9 12l10-8v16zM5 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="ctrl-btn play-btn" id="playPauseBtn" onclick="togglePlay()">
+            <svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="pauseIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          </button>
+          <button class="ctrl-btn" onclick="nextSong()" title="Siguiente">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 4l10 8-10 8V4zM19 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="progress-wrap">
+          <span class="progress-time" id="progressCurrent">0:00</span>
+          <div class="progress-bar" id="progressBar" onclick="seekTo(event)">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <span class="progress-time" id="progressTotal">0:00</span>
+        </div>
+        <button class="ctrl-btn" onclick="closePlayer()" title="Cerrar" style="flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL CREAR LISTA -->
+    <div class="modal-overlay" id="modalCrearLista">
+      <div class="modal-box">
+        <h3 style="color:#fff; font-size:16px; font-weight:500; margin-bottom:16px;">Nueva lista de reproducción</h3>
+        <div style="margin-bottom:16px;">
+          <label style="color:#888; font-size:13px; display:block; margin-bottom:6px;">Nombre</label>
+          <input class="input-field" type="text" id="inputNombreLista" placeholder="Mi lista..." />
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button onclick="cerrarModalCrearLista()" style="flex:1; background:transparent; border:1px solid #333; color:#888; padding:10px; border-radius:8px; font-size:14px; cursor:pointer;">Cancelar</button>
+          <button onclick="crearLista()" style="flex:1; background:#16a34a; color:#fff; border:none; padding:10px; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer;">Crear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL AGREGAR A LISTA -->
+    <div class="modal-overlay" id="modalAgregarLista">
+      <div class="modal-box">
+        <h3 style="color:#fff; font-size:16px; font-weight:500; margin-bottom:16px;">Agregar a lista</h3>
+        <div id="modalListasContainer" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; margin-bottom:16px;"></div>
+        <button onclick="cerrarModalAgregarLista()" style="width:100%; background:transparent; border:1px solid #333; color:#888; padding:10px; border-radius:8px; font-size:14px; cursor:pointer;">Cancelar</button>
+      </div>
+    </div>
+
+    <script>
+      const API = 'http://localhost:8888/reproductorMusical/public';
+      let allSongs = [];
+      let allListas = [];
+      let currentUser = null;
+      let currentUserId = null;
+      const savedTracks = new Set();
+
+      // Reproductor
+      let audio = new Audio();
+      let currentQueue = [];
+      let currentIndex = -1;
+      let isPlaying = false;
+
+      function togglePass() {
+        const input = document.getElementById('inputClave');
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+
+      async function handleLogin() {
+        const usuario = document.getElementById('inputUsuario').value.trim();
+        const clave = document.getElementById('inputClave').value.trim();
+        const btn = document.getElementById('loginBtn');
+        if (!usuario || !clave) {
+          Swal.fire({ icon:'warning', title:'Campos vacíos', text:'Por favor ingresa tu usuario y contraseña.', background:'#111', color:'#fff', confirmButtonColor:'#16a34a', iconColor:'#eab308' });
+          return;
+        }
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Iniciando sesión...';
+        try {
+          const res = await fetch(`${API}/usuarios?login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario, clave })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            currentUser = data.usuario || usuario;
+            currentUserId = data.id || null;
+            enterLibrary();
+          } else {
+            throw new Error(data.mensaje || 'Credenciales incorrectas');
+          }
+        } catch (err) {
+          const isNetwork = err.message.includes('fetch') || err.message.includes('Failed');
+          if (isNetwork) {
+            if (usuario === 'admin' && clave === '1234') { currentUser = 'Admin'; currentUserId = 1; enterLibrary(); return; }
+            Swal.fire({ icon:'error', title:'Credenciales incorrectas', text:'Usuario o contraseña inválidos.', background:'#111', color:'#fff', confirmButtonColor:'#16a34a', iconColor:'#ef4444' });
+          } else {
+            Swal.fire({ icon:'error', title:'Error de autenticación', text:err.message, background:'#111', color:'#fff', confirmButtonColor:'#16a34a', iconColor:'#ef4444' });
+          }
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = 'Iniciar sesión';
+        }
+      }
+
+      function enterLibrary() {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('libraryScreen').classList.add('active');
+        document.getElementById('welcomeUser').textContent = currentUser;
+        loadSongs();
+        loadListas();
+      }
+
+      async function loadSongs() {
+        const list = document.getElementById('songList');
+        const loading = document.getElementById('loadingMsg');
+        loading.style.display = 'block';
+        list.innerHTML = '';
+        try {
+          const res = await fetch(`${API}/canciones`);
+          allSongs = await res.json();
+          renderSongs(allSongs);
+        } catch {
+          allSongs = [
+            { id:1, nombreCancion:'Tití Me Preguntó', artista:'Bad Bunny', genero:'Reggaeton', imagen:'', direccionUrl:'' },
+            { id:2, nombreCancion:'Flowers', artista:'Miley Cyrus', genero:'Pop', imagen:'', direccionUrl:'' },
+            { id:3, nombreCancion:'Anti-Hero', artista:'Taylor Swift', genero:'Pop', imagen:'', direccionUrl:'' },
+          ];
+          renderSongs(allSongs);
+        } finally {
+          loading.style.display = 'none';
+        }
+      }
+
+      function renderSongs(songs, container='songList', queue=null) {
+        const list = document.getElementById(container);
+        const empty = document.getElementById(container === 'songList' ? 'emptyMsg' : 'detalleEmpty');
+        if (container === 'songList') document.getElementById('songCount').textContent = `${songs.length} canciones`;
+        if (!songs.length) {
+          if (empty) empty.style.display = 'block';
+          list.innerHTML = '';
+          return;
+        }
+        if (empty) empty.style.display = 'none';
+        const q = queue || songs;
+
+        list.innerHTML = songs.map((s, i) => {
+          const isActive = currentIndex >= 0 && currentQueue[currentIndex]?.id === s.id && isPlaying;
+          return `
+            <div class="song-card ${isActive ? 'playing' : ''}" id="scard-${s.id}">
+              <div class="song-icon" onclick="playSong(${q.findIndex(x=>x.id===s.id)}, ${JSON.stringify(q).replace(/"/g,'&quot;')})">
+                ${isActive
+                  ? `<div class="eq-bars"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>`
+                  : s.imagen
+                    ? `<img src="${s.imagen}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'" />`
+                    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 18V5l12-2v13" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" stroke="#22c55e" stroke-width="2"/><circle cx="18" cy="16" r="3" stroke="#22c55e" stroke-width="2"/></svg>`
+                }
+              </div>
+              <div style="flex:1; min-width:0; cursor:pointer;" onclick="playSong(${q.findIndex(x=>x.id===s.id)}, ${JSON.stringify(q).replace(/"/g,'&quot;')})">
+                <p style="color:${isActive?'#22c55e':'#fff'}; font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.nombreCancion}</p>
+                <p style="color:#666; font-size:12px; margin-top:2px;">${s.artista}</p>
+              </div>
+              <div style="text-align:right; flex-shrink:0; margin-right:8px;">
+                <span style="background:#16a34a18; color:#22c55e; font-size:11px; padding:3px 8px; border-radius:4px;">${s.genero || '—'}</span>
+              </div>
+              <div class="song-actions">
+                <button class="action-btn success" onclick="abrirModalAgregarLista(${s.id})" title="Agregar a lista">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle; margin-right:3px;"><path d="M3 6h18M3 12h18M3 18h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  + Lista
+                </button>
+                <button class="action-btn danger" onclick="eliminarCancion(${s.id})" title="Eliminar">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:middle; margin-right:3px;"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Eliminar
+                </button>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      function filterSongs(q) {
+        const filtered = allSongs.filter(s =>
+          s.nombreCancion?.toLowerCase().includes(q.toLowerCase()) ||
+          s.artista?.toLowerCase().includes(q.toLowerCase()) ||
+          s.genero?.toLowerCase().includes(q.toLowerCase())
+        );
+        renderSongs(filtered);
+      }
+
+      /* ── Listas ── */
+      async function loadListas() {
+        try {
+          const res = await fetch(`${API}/listas?conteo`);
+          allListas = await res.json();
+        } catch {
+          allListas = [
+            { id:1, nombreLista:'Mis favoritas', totalCanciones:3 },
+            { id:2, nombreLista:'Para el gym', totalCanciones:2 },
+          ];
+        }
+        renderListas();
+        renderGenres();
+      }
+
+      function renderListas() {
+        const container = document.getElementById('listaList');
+        if (!allListas.length) {
+          container.innerHTML = '<div style="text-align:center; padding:3rem; color:#333; font-size:14px;">No tienes listas. ¡Crea una!</div>';
+          return;
+        }
+        container.innerHTML = allListas.map(l => `
+          <div class="lista-card" onclick="verLista(${l.id}, '${l.nombreLista.replace(/'/g,"\\'")}')">
+            <div style="width:44px; height:44px; background:#16a34a22; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6h18M3 12h18M3 18h12" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div style="flex:1;">
+              <p style="color:#fff; font-size:14px; font-weight:500;">${l.nombreLista}</p>
+              <p style="color:#666; font-size:12px; margin-top:2px;">${l.totalCanciones} canciones</p>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="#333" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+        `).join('');
+      }
+
+      async function verLista(id, nombre) {
+        document.getElementById('listaList').style.display = 'none';
+        document.querySelector('[onclick="abrirModalCrearLista()"]').parentElement.style.display = 'none';
+        const detalle = document.getElementById('listaDetalle');
+        detalle.style.display = 'block';
+        document.getElementById('detalleTitulo').textContent = nombre;
+        document.getElementById('detalleSongs').innerHTML = '<div style="text-align:center; padding:2rem; color:#555; font-size:14px;"><span class="spinner"></span> Cargando...</div>';
+
+        try {
+          const res = await fetch(`${API}/listas?idLista=${id}`);
+          const songs = await res.json();
+          if (!songs.length) {
+            document.getElementById('detalleSongs').innerHTML = '';
+            document.getElementById('detalleEmpty').style.display = 'block';
+          } else {
+            document.getElementById('detalleEmpty').style.display = 'none';
+            renderSongs(songs, 'detalleSongs', songs);
+          }
+        } catch {
+          document.getElementById('detalleSongs').innerHTML = '<div style="text-align:center; padding:2rem; color:#333; font-size:14px;">No se pudieron cargar las canciones.</div>';
+        }
+      }
+
+      function volverAListas() {
+        document.getElementById('listaDetalle').style.display = 'none';
+        document.getElementById('listaList').style.display = 'block';
+        document.querySelector('[onclick="abrirModalCrearLista()"]').parentElement.style.display = 'flex';
+      }
+
+      function renderGenres() {
+        const colors = ['#16a34a','#0891b2','#7c3aed','#dc2626','#d97706','#db2777'];
+        const genres = [...new Set(allSongs.map(s => s.genero).filter(Boolean))];
+        document.getElementById('genreGrid').innerHTML = genres.map((g,i) => `
+          <div style="background:${colors[i%colors.length]}18; border:1px solid ${colors[i%colors.length]}33; border-radius:10px; padding:20px 16px; cursor:pointer; transition:all 0.15s;"
+               onmouseover="this.style.background='${colors[i%colors.length]}28'"
+               onmouseout="this.style.background='${colors[i%colors.length]}18'">
+            <p style="color:${colors[i%colors.length]}; font-weight:500; font-size:14px;">${g}</p>
+            <p style="color:#555; font-size:12px; margin-top:4px;">${allSongs.filter(s=>s.genero===g).length} canciones</p>
+          </div>
+        `).join('');
+      }
+
+      function setTab(name, btn) {
+        ['canciones','listas','explorar','buscar'].forEach(t => {
+          document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
+        });
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+
+      /* ── Modal crear lista ── */
+      function abrirModalCrearLista() {
+        document.getElementById('modalCrearLista').classList.add('open');
+        setTimeout(() => document.getElementById('inputNombreLista').focus(), 100);
+      }
+      function cerrarModalCrearLista() {
+        document.getElementById('modalCrearLista').classList.remove('open');
+        document.getElementById('inputNombreLista').value = '';
+      }
+      async function crearLista() {
+        const nombre = document.getElementById('inputNombreLista').value.trim();
+        if (!nombre) return;
+        try {
+          const res = await fetch(`${API}/listas`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombreLista: nombre })
+          });
+          await loadListas();
+          cerrarModalCrearLista();
+          Swal.fire({ icon:'success', title:'Lista creada', text:`"${nombre}" fue creada.`, background:'#111', color:'#fff', confirmButtonColor:'#16a34a', iconColor:'#22c55e', timer:2000, showConfirmButton:false });
+        } catch {
+          allListas.push({ id: Date.now(), nombreLista: nombre, totalCanciones: 0 });
+          renderListas();
+          cerrarModalCrearLista();
+        }
+      }
+      document.getElementById('inputNombreLista').addEventListener('keydown', e => { if (e.key === 'Enter') crearLista(); });
+
+      /* ── Modal agregar a lista ── */
+      let cancionParaAgregar = null;
+      function abrirModalAgregarLista(idCancion) {
+        cancionParaAgregar = idCancion;
+        const container = document.getElementById('modalListasContainer');
+        if (!allListas.length) {
+          container.innerHTML = '<p style="color:#555; font-size:14px; text-align:center;">No tienes listas. Crea una primero.</p>';
+        } else {
+          container.innerHTML = allListas.map(l => `
+            <button onclick="agregarALista(${l.id}, '${l.nombreLista.replace(/'/g,"\\'")}', this)"
+              style="background:#111; border:1px solid #222; color:#fff; padding:12px 16px; border-radius:8px; font-size:14px; cursor:pointer; text-align:left; transition:all 0.15s; display:flex; align-items:center; gap:10px;"
+              onmouseover="this.style.borderColor='#22c55e44'" onmouseout="this.style.borderColor='#222'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h12" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/></svg>
+              ${l.nombreLista}
+              <span style="color:#555; font-size:12px; margin-left:auto;">${l.totalCanciones} canciones</span>
+            </button>
+          `).join('');
+        }
+        document.getElementById('modalAgregarLista').classList.add('open');
+      }
+      function cerrarModalAgregarLista() {
+        document.getElementById('modalAgregarLista').classList.remove('open');
+        cancionParaAgregar = null;
+      }
+      async function agregarALista(idLista, nombreLista, btn) {
+        if (!cancionParaAgregar) return;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-sm"></span> Agregando...';
+        try {
+          const res = await fetch(`${API}/lista-canciones`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idCanciones: cancionParaAgregar, idListaReproduccion: idLista })
+          });
+          cerrarModalAgregarLista();
+          await loadListas();
+          Swal.fire({ icon:'success', title:'Agregada', text:`Canción agregada a "${nombreLista}".`, background:'#111', color:'#fff', confirmButtonColor:'#16a34a', iconColor:'#22c55e', timer:2000, showConfirmButton:false });
+        } catch {
+          cerrarModalAgregarLista();
+          Swal.fire({ icon:'error', title:'Error', text:'No se pudo agregar a la lista.', background:'#111', color:'#fff', confirmButtonColor:'#16a34a', iconColor:'#ef4444' });
+        }
+      }
+
+      /* ── Eliminar canción ── */
+      async function eliminarCancion(id) {
+        const result = await Swal.fire({
+          title: '¿Eliminar canción?', text: 'Se eliminará de tu biblioteca.',
+          icon: 'warning', showCancelButton: true,
+          confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
+          background: '#111', color: '#fff', confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#333', iconColor: '#ef4444'
+        });
+        if (!result.isConfirmed) return;
+        try {
+          await fetch(`${API}/canciones?id=${id}`, { method: 'DELETE' });
+        } catch {}
+        allSongs = allSongs.filter(s => s.id !== id);
+        renderSongs(allSongs);
+        if (currentQueue[currentIndex]?.id === id) closePlayer();
+      }
+
+      /* ── Reproductor ── */
+      function playSong(index, queue) {
+        currentQueue = queue;
+        currentIndex = index;
+        const song = currentQueue[currentIndex];
+        if (!song) return;
+
+        audio.pause();
+        audio.src = song.direccionUrl || '';
+        audio.load();
+
+        document.getElementById('playerTitle').textContent = song.nombreCancion;
+        document.getElementById('playerArtist').textContent = song.artista;
+        const cover = song.imagen || '';
+        const playerCover = document.getElementById('playerCover');
+        playerCover.src = cover;
+        playerCover.style.display = cover ? 'block' : 'none';
+        document.getElementById('playerBar').classList.add('visible');
+
+        if (song.direccionUrl) {
+          audio.play().then(() => { isPlaying = true; updatePlayIcon(); }).catch(() => { isPlaying = false; updatePlayIcon(); });
+        } else {
+          isPlaying = false;
+          updatePlayIcon();
+          Swal.fire({ icon:'info', title:'Sin preview', text:'Esta canción no tiene URL de reproducción disponible.', background:'#111', color:'#fff', confirmButtonColor:'#16a34a', timer:2500, showConfirmButton:false });
+        }
+        renderSongs(allSongs);
+      }
+
+      function togglePlay() {
+        if (!currentQueue.length) return;
+        if (isPlaying) { audio.pause(); isPlaying = false; }
+        else { audio.play().catch(()=>{}); isPlaying = true; }
+        updatePlayIcon();
+        renderSongs(allSongs);
+      }
+
+      function updatePlayIcon() {
+        document.getElementById('playIcon').style.display = isPlaying ? 'none' : 'block';
+        document.getElementById('pauseIcon').style.display = isPlaying ? 'block' : 'none';
+      }
+
+      function nextSong() {
+        if (!currentQueue.length) return;
+        currentIndex = (currentIndex + 1) % currentQueue.length;
+        playSong(currentIndex, currentQueue);
+      }
+      function prevSong() {
+        if (!currentQueue.length) return;
+        currentIndex = (currentIndex - 1 + currentQueue.length) % currentQueue.length;
+        playSong(currentIndex, currentQueue);
+      }
+      function closePlayer() {
+        audio.pause();
+        isPlaying = false;
+        currentIndex = -1;
+        currentQueue = [];
+        document.getElementById('playerBar').classList.remove('visible');
+        renderSongs(allSongs);
+      }
+
+      function seekTo(e) {
+        if (!audio.duration) return;
+        const bar = document.getElementById('progressBar');
+        const rect = bar.getBoundingClientRect();
+        const ratio = (e.clientX - rect.left) / rect.width;
+        audio.currentTime = ratio * audio.duration;
+      }
+
+      function formatTime(s) {
+        if (isNaN(s)) return '0:00';
+        return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+      }
+
+      audio.addEventListener('timeupdate', () => {
+        if (!audio.duration) return;
+        const pct = (audio.currentTime / audio.duration) * 100;
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('progressCurrent').textContent = formatTime(audio.currentTime);
+        document.getElementById('progressTotal').textContent = formatTime(audio.duration);
+      });
+      audio.addEventListener('ended', () => nextSong());
+      audio.addEventListener('play', () => { isPlaying = true; updatePlayIcon(); });
+      audio.addEventListener('pause', () => { isPlaying = false; updatePlayIcon(); });
+
+      /* ── iTunes ── */
+      document.getElementById('itunesSearch').addEventListener('keydown', e => {
+        if (e.key === 'Enter') buscarEnItunes();
+      });
+
+      function formatDuration(ms) {
+        const s = Math.round(ms / 1000);
+        return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+      }
+
+      async function buscarEnItunes() {
+        const q = document.getElementById('itunesSearch').value.trim();
+        if (!q) return;
+        const btn = document.getElementById('itunesBtn');
+        const results = document.getElementById('itunesResults');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-sm"></span>Buscando...';
+        results.innerHTML = '<div style="text-align:center; padding:2rem; color:#555; font-size:14px;"><span class="spinner-sm"></span> Buscando en iTunes...</div>';
+        try {
+          const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=10`;
+          const res = await fetch(url);
+          const data = await res.json();
+          if (!data.results || !data.results.length) {
+            results.innerHTML = '<div style="text-align:center; padding:3rem; color:#333; font-size:14px;">No se encontraron canciones.</div>';
+            return;
+          }
+          renderItunesResults(data.results);
+        } catch {
+          results.innerHTML = '<div style="text-align:center; padding:2rem; color:#ef444466; font-size:14px;">Error al conectar con iTunes.</div>';
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = 'Buscar';
+        }
+      }
+
+      function renderItunesResults(songs) {
+        const results = document.getElementById('itunesResults');
+        results.innerHTML = `
+          <div style="margin-bottom:14px;"><span style="color:#555; font-size:13px;">${songs.length} resultados encontrados</span></div>
+          ${songs.map((s, i) => `
+            <div class="itunes-row">
+              <img class="cover" src="${s.artworkUrl60}" alt="" onerror="this.style.display='none'" />
+              <div style="flex:1; min-width:0; cursor:pointer;" onclick="playPreview('${(s.previewUrl||'').replace(/'/g,"\\'")}', '${s.trackName.replace(/'/g,"\\'")}', '${s.artistName.replace(/'/g,"\\'")}', '${s.artworkUrl60}')">
+                <p style="color:#fff; font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.trackName}</p>
+                <p style="color:#666; font-size:12px; margin-top:3px;">${s.artistName} &middot; ${s.collectionName||''} &middot; <span style="color:#555;">${formatDuration(s.trackTimeMillis)}</span></p>
+                <div style="margin-top:5px; display:flex; align-items:center; gap:6px;">
+                  <span class="badge-genre">${s.primaryGenreName||'Música'}</span>
+                  ${s.previewUrl ? '<span style="color:#555; font-size:11px;">▶ Preview disponible</span>' : ''}
+                </div>
+              </div>
+              <button class="btn-add" id="ibtn-${i}" onclick="agregarCancion(${i}, this)"
+                data-song='${JSON.stringify({
+                  nombreCancion: s.trackName,
+                  artista: s.artistName,
+                  genero: s.primaryGenreName || 'Música',
+                  direccionUrl: s.previewUrl || s.trackViewUrl || '',
+                  imagen: s.artworkUrl60
+                }).replace(/'/g, "&#39;")}'>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:middle; margin-right:4px;">
+                  <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Agregar
+              </button>
+            </div>
+          `).join('')}`;
+      }
+
+      function playPreview(url, title, artist, cover) {
+        const fakeSong = { id: -1, nombreCancion: title, artista: artist, imagen: cover, direccionUrl: url };
+        playSong(0, [fakeSong]);
+      }
+
+      async function agregarCancion(index, btn) {
+        if (!currentUserId) {
+          Swal.fire({ icon:'warning', title:'Sin sesión activa', text:'No se pudo obtener el ID del usuario.', background:'#111', color:'#fff', confirmButtonColor:'#16a34a', iconColor:'#eab308' });
+          return;
+        }
+        const songData = JSON.parse(btn.getAttribute('data-song').replace(/&#39;/g, "'"));
+        songData.idUsuario = currentUserId;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-sm"></span>';
+        try {
+          const res = await fetch(`${API}/canciones`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(songData)
+          });
+          const data = await res.json();
+          if (res.ok) {
+            btn.className = 'btn-add btn-saved';
+            btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:middle; margin-right:4px;"><path d="M5 13l4 4L19 7" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Guardada`;
+            savedTracks.add(index);
+            loadSongs();
+            Swal.fire({ icon:'success', title:'Canción agregada', text:`"${songData.nombreCancion}" fue guardada.`, background:'#111', color:'#fff', confirmButtonColor:'#16a34a', iconColor:'#22c55e', timer:2000, showConfirmButton:false });
+          } else {
+            throw new Error(data.mensaje || 'Error al guardar');
+          }
+        } catch(e) {
+          btn.disabled = false;
+          btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:middle; margin-right:4px;"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Agregar`;
+          Swal.fire({ icon:'error', title:'Error al guardar', text:e.message, background:'#111', color:'#fff', confirmButtonColor:'#16a34a', iconColor:'#ef4444' });
+        }
+      }
+
+      document.getElementById('inputClave').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
+      function handleLogout() {
+        Swal.fire({
+          title:'¿Cerrar sesión?', icon:'question', showCancelButton:true,
+          confirmButtonText:'Sí, salir', cancelButtonText:'Cancelar',
+          background:'#111', color:'#fff', confirmButtonColor:'#16a34a', cancelButtonColor:'#333', iconColor:'#22c55e'
+        }).then(r => {
+          if (r.isConfirmed) {
+            closePlayer();
+            document.getElementById('libraryScreen').classList.remove('active');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('inputUsuario').value = '';
+            document.getElementById('inputClave').value = '';
+            document.getElementById('itunesResults').innerHTML = '';
+            document.getElementById('itunesSearch').value = '';
+            currentUser = null; currentUserId = null; allSongs = []; savedTracks.clear();
+          }
+        });
+      }
+
+      // Cerrar modales al click fuera
+      document.getElementById('modalCrearLista').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarModalCrearLista(); });
+      document.getElementById('modalAgregarLista').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarModalAgregarLista(); });
+    </script>
+  </body>
+</html>

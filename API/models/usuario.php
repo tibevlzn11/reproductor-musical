@@ -74,4 +74,29 @@ class Usuario {
         return $stmt->execute();
     }
 
+    public function login($usuarioInput, $claveInput){
+
+    $query = "SELECT id, nombreCompleto, usuario, clave
+              FROM " . $this->table . "
+              WHERE usuario = :usuario
+              AND borrado IS NULL
+              LIMIT 1";
+
+    $stmt = $this->conn->prepare($query);
+    $stmt->bindParam(':usuario', $usuarioInput);
+    $stmt->execute();
+
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if($user && password_verify($claveInput, $user['clave'])){
+        return [
+            "id"             => $user['id'],
+            "usuario"        => $user['usuario'],
+            "nombreCompleto" => $user['nombreCompleto']
+        ];
+    }
+
+    return false;
+}
+
 }

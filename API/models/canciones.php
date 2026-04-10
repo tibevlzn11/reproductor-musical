@@ -7,7 +7,7 @@ class Cancion {
 
     public $id;
     public $nombreCancion;
-    public $duracion;
+    public $imagen;
     public $artista;
     public $genero;
     public $direccionUrl;
@@ -20,16 +20,16 @@ class Cancion {
     public function create(){
 
         $query = "INSERT INTO ".$this->table."
-        (nombreCancion,duracion,artista,genero,direccionUrl,idUsuario)
-        VALUES (:nombreCancion,:duracion,:artista,:genero,:direccionUrl,:idUsuario)";
+        (nombreCancion,artista,genero,direccionUrl,imagen,idUsuario)
+        VALUES (:nombreCancion,:artista,:genero,:direccionUrl,:imagen,:idUsuario)";
 
         $stmt = $this->conn->prepare($query);
 
         $stmt->bindParam(':nombreCancion',$this->nombreCancion);
-        $stmt->bindParam(':duracion',$this->duracion);
         $stmt->bindParam(':artista',$this->artista);
         $stmt->bindParam(':genero',$this->genero);
         $stmt->bindParam(':direccionUrl',$this->direccionUrl);
+        $stmt->bindParam('imagen',$this->imagen);
         $stmt->bindParam(':idUsuario',$this->idUsuario);
 
         return $stmt->execute();
