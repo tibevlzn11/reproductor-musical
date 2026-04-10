@@ -432,7 +432,7 @@
         loading.style.display = 'block';
         list.innerHTML = '';
         try {
-          const res = await fetch(`${API}/canciones`);
+          const res = await fetch(`${API}/canciones?idUsuario=${currentUserId}`);
           allSongs = await res.json();
           renderSongs(allSongs);
         } catch {
@@ -504,7 +504,7 @@
       /* ── Listas ── */
       async function loadListas() {
         try {
-          const res = await fetch(`${API}/listas?conteo`);
+          const res = await fetch(`${API}/listas?idUsuario=${currentUserId}`);
           allListas = await res.json();
         } catch {
           allListas = [
@@ -603,7 +603,7 @@
         try {
           const res = await fetch(`${API}/listas`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nombreLista: nombre })
+            body: JSON.stringify({ nombreLista: nombre, idUsuario: currentUserId })
           });
           await loadListas();
           cerrarModalCrearLista();

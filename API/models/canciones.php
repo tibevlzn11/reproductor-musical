@@ -35,13 +35,14 @@ class Cancion {
         return $stmt->execute();
     }
 
-    public function read(){
+    public function read($idUsuario){
 
         $query = "SELECT *
                   FROM ".$this->table."
-                  WHERE borrado IS NULL";
+                  WHERE idUsuario = :idUsuario AND borrado IS NULL";
 
         $stmt = $this->conn->prepare($query);
+         $stmt->bindParam(":idUsuario",$idUsuario);
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

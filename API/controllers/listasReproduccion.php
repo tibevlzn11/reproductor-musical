@@ -27,7 +27,7 @@ switch ($method) {
         }
 
         // obtener todas
-        echo json_encode($lista->read());
+        echo json_encode($lista->read($_GET['idUsuario']));
         break;
 
 
@@ -35,7 +35,7 @@ switch ($method) {
 
         $data = json_decode(file_get_contents("php://input"));
 
-        $resultado = $lista->create($data->nombreLista);
+        $resultado = $lista->create($data->nombreLista,$data->idUsuario);
 
         echo json_encode([
             "success" => $resultado

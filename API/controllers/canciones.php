@@ -34,7 +34,7 @@ switch ($method) {
             return;
         }
 
-        echo json_encode($cancion->read());
+        echo json_encode($cancion->read($_GET['idUsuario']));
         break;
 
 
@@ -44,7 +44,7 @@ switch ($method) {
 
         $cancion->nombreCancion = $data->nombreCancion;
         $cancion->artista       = $data->artista;
-        $cancion->imagen = $data->imagen;
+        $cancion->imagen        = $data->imagen;
         $cancion->genero        = $data->genero;
         $cancion->direccionUrl  = $data->direccionUrl;
         $cancion->idUsuario     = $data->idUsuario;

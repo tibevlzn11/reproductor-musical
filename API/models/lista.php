@@ -10,13 +10,20 @@ class Lista {
     }
 
     // obtener todas las listas
-    public function read(){
+    public function read($idUsuario){
 
-        $query = "SELECT *
-                  FROM " . $this->table . "
-                  WHERE borrado IS NULL";
+        $query = "SELECT 
+                    l.id,
+                    l.nombreLista,
+                    COUNT(lc.idCanciones) AS totalCanciones
+                FROM listasReproduccion l
+                LEFT JOIN listaCanciones lc
+                ON l.id = lc.idListaReproduccion
+                WHERE l.idUsuario = :idUsuario AND l.borrado IS NULL
+                GROUP BY l.id";
 
         $stmt = $this->conn->prepare($query);
+        $stmt->bindParam("idUsuario", $idUsuario);
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -24,13 +31,14 @@ class Lista {
 
 
     // crear lista
-    public function create($nombreLista){
+    public function create($nombreLista, $usuarioId){
 
-        $query = "INSERT INTO " . $this->table . " (nombreLista)
-                  VALUES (:nombreLista)";
+        $query = "INSERT INTO " . $this->table . " (nombreLista, idUsuario)
+                  VALUES (:nombreLista,:idUsuario)";
 
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":nombreLista", $nombreLista);
+        $stmt->bindParam(":idUsuario", $usuarioId);
 
         return $stmt->execute();
     }
